@@ -113,9 +113,14 @@ def check_mysqld_on_nodes():
             ps = subprocess.Popen(ps_cmd, stderr=subprocess.STDOUT, shell=True)
             ps.wait()
             res, _ = ps.communicate()
-            if res and len(res.split('\n')) >= 1:
+            logger.debug('res: %s', res)
+            lines = res.split('\n')
+            logger.debug('lines: %s', lines)
+            if res and len(lines) >= 1:
                 up_nodes.append(node)
                 is_up = True
+            if 'mariadb04' in node:
+                exit(1)
         except Exception:
             logger.exception('Error getting status for %s!', node)
 
@@ -148,9 +153,10 @@ def start_mariadb(node):
     logger.debug('start_cmd: %s', start_cmd)
     try:
         res = subprocess.check_call(start_cmd)
-        time.sleep(5 * 60)
     except Exception:
         logger.exception('Error starting mariadb service on %s!', node)
+    logger.info('Sleeping for %smin/s...', DELAY)
+    time.sleep(DELAY * 60)
 
 
 if __name__ == '__main__':
@@ -163,6 +169,8 @@ if __name__ == '__main__':
 
     up_nodes = []
     while True:
+
+        logger.info('#' * 40)
 
         # Check cluster status
         cluster_ok = check_cluster_status(up_nodes)
@@ -184,3 +192,6 @@ if __name__ == '__main__':
         if len(up_nodes) >= 1 and len(down_nodes) > 0:
             for _, node in down_nodes:
                 start_mariadb(node)
+
+        logger.info('Sleeping for %smin/s...', DELAY)
+        time.sleep(DELAY * 60)
