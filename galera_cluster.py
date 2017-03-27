@@ -128,6 +128,9 @@ def check_mysqld_on_nodes():
             except Exception:
                 logger.exception('Error getting seq. no. for %s!', node)
 
+    logger.info('Up: %s', up_nodes)
+    logger.info('Down: %s', down_nodes)
+
     return up_nodes, sorted(down_nodes)
 
 
