@@ -98,10 +98,10 @@ def check_mysqld_on_nodes():
     logger.info('Checking nodes...')
     up_nodes = []
     down_nodes = []
-    for node in cluster['nodes']:
+    for node in CLUSTER['nodes']:
         # Check mysqld status
         logger.info('Checking mysqld status on %s...', node)
-        ps_list = ['/usr/bin/ssh', cluster['nodeuser'] + '@' + node,
+        ps_list = ['/usr/bin/ssh', CLUSTER['nodeuser'] + '@' + node,
                    'ps', 'auxww', '|', 'grep', 'mysqld']
         ps_cmd = ' '.join(ps_list)
         logger.debug('ps_cmd: %s', ps_cmd)
@@ -116,7 +116,7 @@ def check_mysqld_on_nodes():
         # If node is down, get seq. no
         if not is_up:
             logger.info('Getting seq. no on %s...', node)
-            state_cmd = ['/usr/bin/ssh', cluster['nodeuser'] + '@' + node,
+            state_cmd = ['/usr/bin/ssh', CLUSTER['nodeuser'] + '@' + node,
                          'cat', '/var/lib/mysql/grastate.dat']
             logger.debug('state_cmd: %s', state_cmd)
             try:
@@ -137,7 +137,7 @@ def check_mysqld_on_nodes():
 
 def start_mariadb(node):
     logger.info('Starting mariadb service on %s...', node)
-    start_cmd = ['/usr/bin/ssh', cluster['nodeuser'] + '@' + node,
+    start_cmd = ['/usr/bin/ssh', CLUSTER['nodeuser'] + '@' + node,
                  'sudo', 'systemctl', 'restart', 'mariadb']
     logger.debug('start_cmd: %s', start_cmd)
     try:
