@@ -1,0 +1,22 @@
+[Unit]
+Description=Start MariaDB Galera Cluster
+After=network.target
+
+[Service]
+Type=simple
+User=admin
+ExecStart=/usr/bin/python2.7 /opt/galera-scripts/galera_cluster.py
+
+[Install]
+WantedBy=multi-user.target
+
+# Installation:
+# 1. Copy unit file to node
+# rsync -avP start_galera_cluster.service admin@mariadb{01..04}:/tmp/
+#
+# 2. Copy unit file to services dir
+# cp /tmp/start_galera_cluster.service /usr/lib/systemd/system/
+#
+# 3. Reload daemon
+# chmod -x /usr/lib/systemd/system/start_galera_cluster.service
+# systemctl daemon-reload
