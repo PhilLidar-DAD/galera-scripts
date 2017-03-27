@@ -145,9 +145,24 @@ def check_mysqld_on_nodes():
     return up_nodes, sorted(down_nodes)
 
 
-def start_mariadb(node, new_cluster=False):
+def start_mariadb(node, seqno=None):
     logger.info('Starting mariadb service on %s...', node)
-    if new_cluster:
+    if seqno:
+
+        if seqno == -1:
+            logger.info('Setting safe_to_bootstrap on %s...', node)
+            sed_cmd = ['/usr/bin/ssh', CLUSTER['nodeuser'] + '@' + node,
+                       'sudo', 'sed', '-i',
+                       "'s/safe_to_bootstrap: 0/safe_to_bootstrap: 1/g'",
+                       '/var/lib/mysql/grastate.dat']
+            try:
+                res = subprocess.check_call(sed_cmd)
+            except Exception:
+                logger.exception('Error setting safe_to_bootstrap on %s...',
+                                 node)
+                logger.error('Exiting!')
+                exit(1)
+
         start_cmd = ['/usr/bin/ssh', CLUSTER['nodeuser'] + '@' + node,
                      'sudo', '/usr/bin/galera_new_cluster']
     else:
@@ -185,10 +200,10 @@ if __name__ == '__main__':
         if not cluster_ok:
             # If there are no up nodes, and there is at least 1 accessible
             # down node, start node with high seq. no
-            sqno_node = down_nodes.pop()
+            seqno, node = down_nodes.pop()
             if len(up_nodes) == 0 and len(down_nodes) >= 1:
                 logger.info('Initializing cluster...')
-                start_mariadb(sqno_node[1], new_cluster=True)
+                start_mariadb(node, seqno)
 
         # Start all down nodes if there's at least 1 up node, and there are
         # down nodes
