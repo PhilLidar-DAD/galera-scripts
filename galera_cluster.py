@@ -131,7 +131,7 @@ def check_mysqld_on_nodes():
                     if 'seqno' in line:
                         tokens = line.strip().split()
                         seqno = int(tokens[-1])
-                        down_nodes.add((seqno, node))
+                        down_nodes.append((seqno, node))
             except Exception:
                 logger.exception('Error getting seq. no. for %s!', node)
 
