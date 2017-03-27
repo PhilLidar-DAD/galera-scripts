@@ -145,10 +145,14 @@ def check_mysqld_on_nodes():
     return up_nodes, sorted(down_nodes)
 
 
-def start_mariadb(node):
+def start_mariadb(node, new_cluster=False):
     logger.info('Starting mariadb service on %s...', node)
-    start_cmd = ['/usr/bin/ssh', CLUSTER['nodeuser'] + '@' + node,
-                 'sudo', 'systemctl', 'restart', 'mariadb']
+    if new_cluster:
+        start_cmd = ['/usr/bin/ssh', CLUSTER['nodeuser'] + '@' + node,
+                     'sudo', '/usr/bin/galera_new_cluster']
+    else:
+        start_cmd = ['/usr/bin/ssh', CLUSTER['nodeuser'] + '@' + node,
+                     'sudo', 'systemctl', 'restart', 'mariadb']
     logger.debug('start_cmd: %s', start_cmd)
     try:
         res = subprocess.check_call(start_cmd)
@@ -184,7 +188,7 @@ if __name__ == '__main__':
             sqno_node = down_nodes.pop()
             if len(up_nodes) == 0 and len(down_nodes) >= 1:
                 logger.info('Initializing cluster...')
-                start_mariadb(sqno_node[1])
+                start_mariadb(sqno_node[1], new_cluster=True)
 
         # Start all down nodes if there's at least 1 up node, and there are
         # down nodes
