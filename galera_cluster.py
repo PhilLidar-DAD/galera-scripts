@@ -139,9 +139,6 @@ def check_mysqld_on_nodes():
             except Exception:
                 logger.exception('Error getting seq. no. for %s!', node)
 
-    logger.info('Up: %s', up_nodes)
-    logger.info('Down: %s', down_nodes)
-
     return up_nodes, sorted(down_nodes)
 
 
@@ -194,6 +191,9 @@ if __name__ == '__main__':
 
         # Check each node
         up_nodes, down_nodes = check_mysqld_on_nodes()
+
+        logger.info('Up: %s', up_nodes)
+        logger.info('Down: %s', down_nodes)
 
         # Start cluster nodes
         if not cluster_ok:
