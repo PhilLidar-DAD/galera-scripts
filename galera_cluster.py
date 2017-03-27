@@ -105,15 +105,15 @@ def check_mysqld_on_nodes():
         # Check mysqld status
         logger.info('Checking mysqld status on %s...', node)
         ps_list = ['/usr/bin/ssh', CLUSTER['nodeuser'] + '@' + node,
-                   'ps', 'auxww', '|', 'grep', 'mysqld', '|', 'grep', '-v',
-                   'grep']
+                   "'ps", 'auxww', '|', 'grep', 'mysqld', '|', 'grep', '-v',
+                   "grep'"]
         ps_cmd = ' '.join(ps_list)
         logger.debug('ps_cmd: %s', ps_cmd)
         try:
             ps = subprocess.Popen(ps_cmd, stderr=subprocess.STDOUT, shell=True)
             ps.wait()
             res, _ = ps.communicate()
-            if len(res.split('\n')) >= 1:
+            if res and len(res.split('\n')) >= 1:
                 up_nodes.append(node)
                 is_up = True
         except Exception:
