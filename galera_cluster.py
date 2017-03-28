@@ -120,8 +120,6 @@ def check_mysqld_on_nodes():
                 is_up = True
         except Exception:
             logger.exception('Error getting status for %s!', node)
-        # if 'mariadb04' in node:
-        #     exit(1)
 
         # If node is down, get seq. no
         if not is_up:

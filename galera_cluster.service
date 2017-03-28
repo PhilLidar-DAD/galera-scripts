@@ -4,7 +4,6 @@ After=network.target
 
 [Service]
 Type=simple
-User=admin
 ExecStart=/usr/bin/python2.7 /opt/galera-scripts/galera_cluster.py
 
 [Install]
