@@ -104,7 +104,7 @@ def check_mysqld_on_nodes():
 
         # Check mysqld status
         logger.info('Checking mysqld status on %s...', node)
-        ps_list = ['/usr/bin/ssh', CLUSTER['nodeuser'] + '@' + node,
+        ps_list = ['ssh', node,
                    "'ps", 'auxww', '|', 'grep', 'mysqld', '|', 'grep', '-v',
                    "grep'"]
         ps_cmd = ' '.join(ps_list)
@@ -126,8 +126,7 @@ def check_mysqld_on_nodes():
         # If node is down, get seq. no
         if not is_up:
             logger.info('Getting seq. no on %s...', node)
-            state_cmd = ['/usr/bin/ssh', CLUSTER['nodeuser'] + '@' + node,
-                         'cat', '/var/lib/mysql/grastate.dat']
+            state_cmd = ['ssh', node, 'cat', '/var/lib/mysql/grastate.dat']
             logger.debug('state_cmd: %s', ' '.join(state_cmd))
             try:
                 res = subprocess.check_output(state_cmd)
@@ -147,8 +146,8 @@ def start_mariadb(node, new_cluster=False):
     if new_cluster:
 
         logger.info('Setting safe_to_bootstrap on %s...', node)
-        sed_cmd = ['/usr/bin/ssh', CLUSTER['nodeuser'] + '@' + node,
-                   "'sudo", 'sed', '-i',
+        sed_cmd = ['ssh', node,
+                   'sed', '-i',
                    "'s/safe_to_bootstrap: 0/safe_to_bootstrap: 1/g'",
                    "/var/lib/mysql/grastate.dat'"]
         logger.debug('sed_cmd: %s', ' '.join(sed_cmd))
@@ -160,11 +159,9 @@ def start_mariadb(node, new_cluster=False):
             logger.error('Exiting!')
             exit(1)
 
-        start_cmd = ['/usr/bin/ssh', CLUSTER['nodeuser'] + '@' + node,
-                     'sudo', '/usr/bin/galera_new_cluster']
+        start_cmd = ['ssh', node, 'galera_new_cluster']
     else:
-        start_cmd = ['/usr/bin/ssh', CLUSTER['nodeuser'] + '@' + node,
-                     'sudo', 'systemctl', 'restart', 'mariadb']
+        start_cmd = ['ssh', node, 'systemctl', 'restart', 'mariadb']
     logger.debug('start_cmd: %s', ' '.join(start_cmd))
     try:
         res = subprocess.check_call(start_cmd)
