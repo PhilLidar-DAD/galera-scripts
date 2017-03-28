@@ -146,13 +146,14 @@ def start_mariadb(node, new_cluster=False):
     if new_cluster:
 
         logger.info('Setting safe_to_bootstrap on %s...', node)
-        sed_cmd = ['ssh', node,
+        sed_lst = ['ssh', node,
                    '"sed', '-i',
                    "'s/safe_to_bootstrap: 0/safe_to_bootstrap: 1/g'",
                    '/var/lib/mysql/grastate.dat"']
-        logger.debug('sed_cmd: %s', ' '.join(sed_cmd))
+        sed_cmd = ' '.join(sed_lst)
+        logger.debug('sed_cmd: %s', sed_cmd)
         try:
-            res = subprocess.check_call(sed_cmd)
+            res = subprocess.check_call(sed_cmd, shell=True)
         except Exception:
             logger.exception('Error setting safe_to_bootstrap on %s...',
                              node)
