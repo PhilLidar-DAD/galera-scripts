@@ -164,7 +164,7 @@ def start_mariadb(node, new_cluster=False):
 
 def update_down_counters(up_nodes, down_nodes, down_counters):
     # Decrease down counters for up nodes
-    for _, node in up_nodes:
+    for node in up_nodes:
         # Initialize if not present
         if node not in down_counters:
             down_counters[node] = 0
@@ -175,7 +175,7 @@ def update_down_counters(up_nodes, down_nodes, down_counters):
             down_counters[node] = 0
 
     # Increase down counters for down nodes
-    for _, node in up_nodes:
+    for _, node in down_nodes:
         # Initialize if not present
         if node not in down_counters:
             down_counters[node] = 0
