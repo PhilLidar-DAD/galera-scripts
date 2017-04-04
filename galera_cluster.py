@@ -18,6 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+from pprint import pformat
 from settings import *
 import argparse
 import logging
@@ -55,9 +56,9 @@ def setup_logging(args):
     logger.addHandler(ch)
 
 
-def check_cluster_status(up_nodes):
+def check_cluster_status():
     # Check cluster status
-    cluster_ok = False
+    cluster_up = False
     dbcon = None
     try:
         # Try connecting to galera vip
@@ -70,15 +71,6 @@ status...', CLUSTER['dbhost'])
     except Exception:
         logger.exception('Error connecting to database!')
 
-        # Check previously up nodes
-        if len(up_nodes) >= 3:
-            logger.error('Up nodes already >= 3! \
-Stopping VIP on this node...')
-            # Stop cluster services on current node
-            subprocess.call(['pcs', 'cluster', 'stop'])
-            # Exit if this script hasn't already stopped
-            exit(1)
-
     # Get cluster status
     if dbcon:
         logger.info('Getting cluster status...')
@@ -86,12 +78,12 @@ Stopping VIP on this node...')
         dbcur.execute("SHOW GLOBAL STATUS LIKE 'wsrep_cluster_status'")
         row = dbcur.fetchone()
         if row[1] == 'Primary':
-            logger.info('Galera cluster db: %s is ok.', CLUSTER['dbhost'])
-            cluster_ok = True
+            logger.info('Cluster %s is up.', CLUSTER['dbhost'])
+            cluster_up = True
         dbcur.close()
         dbcon.close()
 
-    return cluster_ok
+    return cluster_up
 
 
 def check_mysqld_on_nodes():
@@ -166,9 +158,43 @@ def start_mariadb(node, new_cluster=False):
         res = subprocess.check_call(start_cmd)
     except Exception:
         logger.exception('Error starting mariadb service on %s!', node)
-    logger.info('Sleeping for %smin/s...', DELAY)
+    logger.info('NODE START: Sleeping for %smin/s...', DELAY)
     time.sleep(DELAY * 60)
 
+
+def update_down_counters(up_nodes, down_nodes, down_counters):
+    # Decrease down counters for up nodes
+    for _, node in up_nodes:
+        # Initialize if not present
+        if node not in down_counters:
+            down_counters[node] = 0
+        # Decrease down counter
+        down_counters[node] -= 1
+        # Reset to 0 if negative
+        if down_counters[node] < 0:
+            down_counters[node] = 0
+
+    # Increase down counters for down nodes
+    for _, node in up_nodes:
+        # Initialize if not present
+        if node not in down_counters:
+            down_counters[node] = 0
+        # Increase down counter
+        down_counters[node] += 1
+
+    logger.info('Down counters:\n%s', pformat(down_counters, width=40))
+
+    # If node has been down for more than the threshold, reboot the node
+    for node, counter in down_counters.viewitems():
+        if counter >= DOWN_THRESHOLD:
+            logger.error('Cannot start %s! Rebooting node...', node)
+            # Rebooting node
+            subprocess.call(['reboot'])
+            # Reset counter
+            down_counters[node] = 0
+            # Wait node to finish rebooting
+            logger.info('NODE REBOOT: Sleeping for %smin/s...', DELAY)
+            time.sleep(DELAY * 60)
 
 if __name__ == '__main__':
 
@@ -179,12 +205,13 @@ if __name__ == '__main__':
     setup_logging(args)
 
     up_nodes = []
+    down_counters = {}
     while True:
 
         logger.info('#' * 40)
 
         # Check cluster status
-        cluster_ok = check_cluster_status(up_nodes)
+        cluster_up = check_cluster_status()
 
         # Check each node
         up_nodes, down_nodes = check_mysqld_on_nodes()
@@ -192,8 +219,11 @@ if __name__ == '__main__':
         logger.info('Up: %s', up_nodes)
         logger.info('Down: %s', down_nodes)
 
+        # Update down counters
+        update_down_counters(up_nodes, down_nodes, down_counters)
+
         # Start cluster nodes
-        if not cluster_ok:
+        if not cluster_up:
             # If there are no up nodes, and there is at least 1 accessible
             # down node, start node with high seq. no
             seqno, node = down_nodes.pop()
@@ -207,5 +237,5 @@ if __name__ == '__main__':
             for _, node in down_nodes:
                 start_mariadb(node)
 
-        logger.info('Sleeping for %smin/s...', DELAY)
+        logger.info('LOOP: Sleeping for %smin/s...', DELAY)
         time.sleep(DELAY * 60)
