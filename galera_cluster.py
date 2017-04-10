@@ -107,7 +107,7 @@ def check_mysqld_on_nodes():
             ps.wait()
             res, _ = ps.communicate()
             logger.debug('res: %s', res)
-            if res and len(res.split('\n')) >= 1:
+            if res and 'mysqld' in res:
                 up_nodes.append(node)
                 is_up = True
         except Exception:
