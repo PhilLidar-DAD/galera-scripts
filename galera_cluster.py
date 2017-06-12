@@ -223,17 +223,17 @@ if __name__ == '__main__':
         update_down_counters(up_nodes, down_nodes, down_counters)
 
         # Start cluster nodes
-        if not cluster_up:
+        #if not cluster_up:
             # If there are no up nodes, and there is at least 1 accessible
             # down node, start node with high seq. no
+        if len(up_nodes) == 0 and len(down_nodes) >= 1:
             seqno, node = down_nodes.pop()
-            if len(up_nodes) == 0 and len(down_nodes) >= 1:
-                logger.info('Initializing cluster...')
-                start_mariadb(node, new_cluster=True)
+            logger.info('Initializing cluster...')
+            start_mariadb(node, new_cluster=True)
 
         # Start all down nodes if there's at least 1 up node, and there are
         # down nodes
-        if len(up_nodes) >= 1 and len(down_nodes) > 0:
+        elif len(up_nodes) >= 1 and len(down_nodes) > 0:
             for _, node in down_nodes:
                 start_mariadb(node)
 
